@@ -12,6 +12,7 @@ const serverlessConfiguration: AWS = {
   // Add the serverless-webpack plugin
   plugins: [
     "serverless-offline",
+    "serverless-dynamodb-local",
     "serverless-dotenv-plugin",
     "serverless-bundle",
   ],

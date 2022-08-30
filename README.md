@@ -390,3 +390,133 @@ const serverlessConfiguration: AWS = {
 
 module.exports = serverlessConfiguration;
 ```
+
+#### 5. Configuration `serverless-dynamodb-local` and `serverless-offline`
+
+1. To run DynamoDB locally, we need to first install the `serverless-dynamodb-local` plugin
+
+```
+yarn add -D serverless-dynamodb-local
+```
+
+2. Next, we need to update `serverless.ts` plugins array:
+
+```ts
+plugins: [
+    'serverless-bundle',
+    'serverless-dynamodb-local',
+    'serverless-offline',
+    'serverless-dotenv-plugin',
+],
+```
+
+3. To use the plugin, we need to install DynamoDB Local by running `sls dynamodb install` at the project root.
+   Note: this will take around 20 mins.
+
+output:
+
+```
+Started downloading dynamodb-local from http://s3-us-west-2.amazonaws.com/dynamodb-local/dynamodb_local_latest.tar.gz into /home/isdance/Desktop/serverless-projects/cognito-research/.dynamodb. Process may take few minutes.
+
+ Installation complete!
+```
+
+4. start it locally
+
+```
+sls dynamodb start
+```
+
+5. to run serverless-offline, firstly stop the local dynamodb, then run `serverless offline start`
+
+Output:
+
+```
+Watching for changes...
+
+Starting Offline at stage dev (ap-southeast-2)
+
+Issues checking in progress...
+Offline [http for lambda] listening on http://localhost:3002
+Function names exposed for local invocation by aws-sdk:
+           * hello: serverless-todo-dev-hello
+
+   ┌─────────────────────────────────────────────────────────────────────────┐
+   │                                                                         │
+   │   GET | http://localhost:3000/dev/hello                                 │
+   │   POST | http://localhost:3000/2015-03-31/functions/hello/invocations   │
+   │                                                                         │
+   └─────────────────────────────────────────────────────────────────────────┘
+
+Server ready: http://localhost:3000 🚀
+```
+
+Now you can use curl to call the local endpoint
+
+```
+curl -XGET 'http://localhost:3000/dev/hello'
+```
+
+Response:
+
+```json
+{
+  "message": "Go Serverless Webpack (Typescript) v1.0! Your function executed successfully!",
+  "input": {
+    "body": null,
+    "headers": {
+      "Host": "localhost:3000",
+      "User-Agent": "curl/7.74.0",
+      "Accept": "*/*"
+    },
+    "httpMethod": "GET",
+    "isBase64Encoded": false,
+    "multiValueHeaders": {
+      "Host": ["localhost:3000"],
+      "User-Agent": ["curl/7.74.0"],
+      "Accept": ["*/*"]
+    },
+    "multiValueQueryStringParameters": null,
+    "path": "/hello",
+    "pathParameters": null,
+    "queryStringParameters": null,
+    "requestContext": {
+      "accountId": "offlineContext_accountId",
+      "apiId": "offlineContext_apiId",
+      "authorizer": {
+        "principalId": "offlineContext_authorizer_principalId"
+      },
+      "domainName": "offlineContext_domainName",
+      "domainPrefix": "offlineContext_domainPrefix",
+      "extendedRequestId": "58830e2d-33d4-42fe-9d07-74f474a0dc0e",
+      "httpMethod": "GET",
+      "identity": {
+        "accessKey": null,
+        "accountId": "offlineContext_accountId",
+        "apiKey": "offlineContext_apiKey",
+        "apiKeyId": "offlineContext_apiKeyId",
+        "caller": "offlineContext_caller",
+        "cognitoAuthenticationProvider": "offlineContext_cognitoAuthenticationProvider",
+        "cognitoAuthenticationType": "offlineContext_cognitoAuthenticationType",
+        "cognitoIdentityId": "offlineContext_cognitoIdentityId",
+        "cognitoIdentityPoolId": "offlineContext_cognitoIdentityPoolId",
+        "principalOrgId": null,
+        "sourceIp": "127.0.0.1",
+        "user": "offlineContext_user",
+        "userAgent": "curl/7.74.0",
+        "userArn": "offlineContext_userArn"
+      },
+      "path": "/hello",
+      "protocol": "HTTP/1.1",
+      "requestId": "9dc92032-5e6c-484f-b198-0863abd4bb01",
+      "requestTime": "30/Aug/2022:20:10:36 +1000",
+      "requestTimeEpoch": 1661854236537,
+      "resourceId": "offlineContext_resourceId",
+      "resourcePath": "/dev/hello",
+      "stage": "dev"
+    },
+    "resource": "/hello",
+    "stageVariables": null
+  }
+}
+```

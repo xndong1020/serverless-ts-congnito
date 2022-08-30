@@ -23,6 +23,7 @@
     "remove-files-webpack-plugin": "^1.5.0",
     "serverless-bundle": "^5.5.0",
     "serverless-dotenv-plugin": "^4.0.2",
+    "serverless-dynamodb-local": "^0.2.40",
     "serverless-offline": "^9.3.0",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.1.0"
