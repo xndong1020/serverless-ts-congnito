@@ -5,11 +5,15 @@ const serverlessConfiguration: AWS = {
   frameworkVersion: "*",
 
   // Add the serverless-webpack plugin
-  plugins: ["serverless-webpack"],
+  plugins: [
+    "serverless-offline",
+    "serverless-dotenv-plugin",
+    "serverless-bundle",
+  ],
 
   provider: {
     name: "aws",
-    runtime: "nodejs14.x",
+    runtime: "nodejs16.x",
     region: "ap-southeast-2",
     apiGateway: {
       shouldStartNameWithService: true,
@@ -20,12 +24,7 @@ const serverlessConfiguration: AWS = {
     },
   },
 
-  custom: {
-    webpack: {
-      webpackConfig: "./webpack.config.js",
-      includeModules: true,
-    },
-  },
+  custom: {},
   functions: {
     hello: {
       handler: "src/handler.hello",

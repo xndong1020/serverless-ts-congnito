@@ -112,3 +112,14 @@ To deploy to AWS, use the following script: `serverless deploy --aws-profile <aw
 
 Or test locally with the following command: `serverless invoke local --function hello`
 
+#### Improve production build
+
+Next we can replace `serverless-webpack` with `serverless-bundle`, which produces a much smaller production bundle.
+
+```
+yarn add -D serverless-offline serverless-dotenv-plugin serverless-bundle @types/uuid
+
+yarn add aws-sdk uuid
+```
+
+and we can safely delete the `webpack.config.js`, and then create a `.env` file at the project root
