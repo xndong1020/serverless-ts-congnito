@@ -5,7 +5,10 @@ jspm_packages
 # Serverless directories
 .serverless
 
-# esbuild directories
+# esbuild/webpack directories
 .esbuild
 .webpack
 dist
+
+# serverless-dynamodb-local
+.dynamodb
