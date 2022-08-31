@@ -45,10 +45,12 @@ const serverlessConfiguration: AWS = {
               "dynamodb:PutItem",
               "dynamodb:UpdateItem",
               "dynamodb:DeleteItem",
+              "cognito-idp:*",
             ],
             Resource: [
               { "Fn::GetAtt": ["ListTable", "Arn"] },
               { "Fn::GetAtt": ["TasksTable", "Arn"] },
+              "${self:custom.cognito_user_pool_arn}",
             ],
           },
         ],
@@ -59,6 +61,9 @@ const serverlessConfiguration: AWS = {
   custom: {
     region: "${opt:region, env:REGION}",
     stage: "${opt:stage, env:STAGE}",
+    cognito_user_pool_arn: "${env:COGNITO_USER_POOL_ARN}",
+    cognito_user_pool_id: "env:COGNITO_USER_POOL_ID",
+    cognito_user_pool_name: "${env:COGNITO_USER_POOL_NAME}",
     list_table: "${self:service}-list-table-${opt:stage, env:STAGE}",
     tasks_table: "${self:service}-tasks-table-${opt:stage, env:STAGE}",
     table_throughputs: {
@@ -97,6 +102,29 @@ const serverlessConfiguration: AWS = {
           http: {
             method: "get",
             path: "hello",
+          },
+        },
+      ],
+    },
+    create: {
+      handler: "src/create.handler",
+      events: [
+        {
+          http: {
+            method: "post",
+            path: "create",
+          },
+        },
+      ],
+    },
+    customMessage: {
+      handler: "src/message.handler",
+      events: [
+        {
+          cognitoUserPool: {
+            pool: "${self:custom.cognito_user_pool_name}",
+            trigger: "CustomMessage",
+            existing: true,
           },
         },
       ],

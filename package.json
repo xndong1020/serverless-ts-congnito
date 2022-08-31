@@ -4,8 +4,8 @@
   "description": "Serverless aws-nodejs-typescript template",
   "main": "serverless.ts",
   "scripts": {
-    "deploy": "serverless deploy --aws-profile yahoo",
-    "destroy": "serverless remove --aws-profile yahoo"
+    "deploy": "serverless deploy --aws-profile amplify",
+    "destroy": "serverless remove --aws-profile amplify"
   },
   "engines": {
     "node": ">=14.15.0"
