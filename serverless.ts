@@ -1,7 +1,9 @@
 import { AWS } from "@serverless/typescript";
 
 // DynamoDB
-import dynamoDbTables from "./resources/dynamodb-tables";
+import dynamoDbTables from "./resources/user-table";
+// SQS
+import standardQueues from "./resources/stand-queues";
 
 const serverlessConfiguration: AWS = {
   service: "serverless-todo" as AWS["service"],
@@ -29,29 +31,34 @@ const serverlessConfiguration: AWS = {
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1",
       REGION: "${self:custom.region}",
       STAGE: "${self:custom.stage}",
+      USERS_TABLE: "${self:custom.user_table}",
       LIST_TABLE: "${self:custom.list_table}",
       TASKS_TABLE: "${self:custom.tasks_table}",
+      INVITATION_EMAIL_QUEUE_URL: { Ref: "InvitationEmailQueue" },
+    },
+    logRetentionInDays: 3,
+    logs: {
+      httpApi: true,
+    },
+    httpApi: {
+      cors: true,
+      authorizers: {
+        Cognito: {
+          type: "jwt",
+          identitySource: "$request.header.Authorization",
+          issuerUrl:
+            "https://cognito-idp.${aws:region}.amazonaws.com/ap-southeast-2_6G4tWBXZm",
+          audience: "4vtmrg014aorq0bnmbisuvb18a",
+        },
+      },
     },
     iam: {
       role: {
         statements: [
           {
             Effect: "Allow",
-            Action: [
-              "dynamodb:DescribeTable",
-              "dynamodb:Query",
-              "dynamodb:Scan",
-              "dynamodb:GetItem",
-              "dynamodb:PutItem",
-              "dynamodb:UpdateItem",
-              "dynamodb:DeleteItem",
-              "cognito-idp:*",
-            ],
-            Resource: [
-              { "Fn::GetAtt": ["ListTable", "Arn"] },
-              { "Fn::GetAtt": ["TasksTable", "Arn"] },
-              "${self:custom.cognito_user_pool_arn}",
-            ],
+            Action: "*",
+            Resource: "*",
           },
         ],
       },
@@ -64,6 +71,7 @@ const serverlessConfiguration: AWS = {
     cognito_user_pool_arn: "${env:COGNITO_USER_POOL_ARN}",
     cognito_user_pool_id: "env:COGNITO_USER_POOL_ID",
     cognito_user_pool_name: "${env:COGNITO_USER_POOL_NAME}",
+    user_table: "${self:service}-users-table-${opt:stage, env:STAGE}",
     list_table: "${self:service}-list-table-${opt:stage, env:STAGE}",
     tasks_table: "${self:service}-tasks-table-${opt:stage, env:STAGE}",
     table_throughputs: {
@@ -92,22 +100,59 @@ const serverlessConfiguration: AWS = {
         presets: ["env"],
       },
     },
+    bundle: {
+      sourcemaps: false,
+      excludeFiles: "**/*.test.ts",
+      esBuild: true,
+    },
   },
 
   functions: {
-    hello: {
-      handler: "src/handler.hello",
+    app: {
+      handler: "src/server/server.handler",
       events: [
         {
-          http: {
-            method: "get",
-            path: "hello",
+          httpApi: {
+            path: "/public/{proxy+}",
+            method: "OPTIONS",
+          },
+        },
+        {
+          httpApi: {
+            path: "/public/{proxy+}",
+            method: "GET",
+          },
+        },
+        {
+          httpApi: {
+            path: "/public/{proxy+}",
+            method: "POST",
+          },
+        },
+        {
+          httpApi: {
+            path: "/private/{proxy+}",
+            method: "*",
+            authorizer: "Cognito",
           },
         },
       ],
     },
+    // hello: {
+    //   handler: "src/handler.hello",
+    //   architecture: "arm64",
+    //   events: [
+    //     {
+    //       http: {
+    //         method: "get",
+    //         path: "hello",
+    //       },
+    //     },
+    //   ],
+    // },
     create: {
-      handler: "src/create.handler",
+      handler: "src/lambdas/cognitoUserPoolUser/create.handler",
+      architecture: "arm64",
       events: [
         {
           http: {
@@ -117,13 +162,107 @@ const serverlessConfiguration: AWS = {
         },
       ],
     },
+    changePassword: {
+      handler: "src/lambdas/cognitoUserPoolUser/changePassword.handler",
+      architecture: "arm64",
+      events: [
+        {
+          http: {
+            method: "post",
+            path: "changePassword",
+            cors: true,
+          },
+        },
+      ],
+    },
+    // checkInvitationExpirationCronJob: {
+    //   handler: "src/lambdas/checkInvitationExpirationCronJob.handler",
+    //   architecture: "arm64",
+    //   events: [
+    //     {
+    //       schedule: "rate(6 hours)",
+    //     },
+    //   ],
+    // },
+    // invitationEmailQueueProcessor: {
+    //   handler: "src/lambdas/invitationEmailQueueProcessor.handler",
+    //   architecture: "arm64",
+    //   events: [
+    //     {
+    //       sqs: {
+    //         arn: "arn:aws:sqs:${aws:region}:${aws:accountId}:invitation-email-queue-${self:custom.stage}",
+    //         batchSize: 1,
+    //       },
+    //     },
+    //   ],
+    // },
+    // deliveryChecker: {
+    //   handler: "src/lambdas/sesCheckers/delivery.handler",
+    //   architecture: "arm64",
+    //   events: [
+    //     {
+    //       sns: {
+    //         arn: "arn:aws:sns:ap-southeast-2:275745566633:delivery_check",
+    //       },
+    //     },
+    //   ],
+    // },
+    // bounceChecker: {
+    //   handler: "src/lambdas/sesCheckers/bounce.handler",
+    //   architecture: "arm64",
+    //   events: [
+    //     {
+    //       sns: {
+    //         arn: "arn:aws:sns:ap-southeast-2:275745566633:bounce_check",
+    //       },
+    //     },
+    //   ],
+    // },
+    // complaintChecker: {
+    //   handler: "src/lambdas/sesCheckers/complaint.handler",
+    //   architecture: "arm64",
+    //   events: [
+    //     {
+    //       sns: {
+    //         arn: "arn:aws:sns:ap-southeast-2:275745566633:complaint_check",
+    //       },
+    //     },
+    //   ],
+    // },
     customMessage: {
-      handler: "src/message.handler",
+      handler: "src/lambdas/currentMessage.handler",
+      architecture: "arm64",
       events: [
         {
           cognitoUserPool: {
             pool: "${self:custom.cognito_user_pool_name}",
             trigger: "CustomMessage",
+            existing: true,
+          },
+        },
+      ],
+    },
+    preAuthentication: {
+      handler: "src/lambdas/preAuthentication.handler",
+      architecture: "arm64",
+      events: [
+        {
+          cognitoUserPool: {
+            pool: "${self:custom.cognito_user_pool_name}",
+            trigger: "PreAuthentication",
+            existing: true,
+          },
+        },
+      ],
+    },
+    postAuthentication: {
+      handler: "src/lambdas/postAuthentication.handler",
+      architecture: "arm64",
+      events: [
+        {
+          cognitoUserPool: {
+            pool: "${self:custom.cognito_user_pool_name}",
+            trigger: "PostAuthentication",
             existing: true,
           },
         },
@@ -136,7 +275,10 @@ const serverlessConfiguration: AWS = {
   },
 
   resources: {
-    Resources: dynamoDbTables,
+    Resources: {
+      ...dynamoDbTables,
+      ...standardQueues,
+    },
   },
 };
 

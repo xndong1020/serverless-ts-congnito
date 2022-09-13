@@ -1,0 +1,3 @@
+export enum UserStatus {
+  FORCE_CHANGE_PASSWORD = "FORCE_CHANGE_PASSWORD",
+}
